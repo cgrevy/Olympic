@@ -7,13 +7,12 @@ olympics <- read.csv("/Users/mtue/Desktop/Data visualization/Eksamen project/arc
 
 # ---- UI ----
 ui <- fluidPage(
-  titlePanel("Average Age of Participants per Olympic Game (1896–2016)"),
+  titlePanel("Age Distribution of Olympic Athletes by Sport (1896–2016)"),
   
   sidebarLayout(
     sidebarPanel(
-      selectInput("season", "Choose Games:",
-                  choices = c("All", "Summer", "Winter"),
-                  selected = "All"),
+      selectInput("sport", "Choose Sport:",
+                  choices = c("All", sort(unique(olympics$Sport)))),
       
       sliderInput("yearRange", "Select Year Range:",
                   min = 1896, max = 2016,
@@ -22,85 +21,63 @@ ui <- fluidPage(
     ),
     
     mainPanel(
-      plotlyOutput("ageGameHistogram")
+      plotlyOutput("ageHistogram")
     )
   )
 )
 
+
 # ---- SERVER ----
 server <- function(input, output) {
   
-  output$ageGameHistogram <- renderPlotly({
+  output$ageHistogram <- renderPlotly({
     
+    # Filter data
     filtered <- olympics %>%
       filter(Year >= input$yearRange[1],
              Year <= input$yearRange[2],
              !is.na(Age))
     
-    if (input$season != "All") {
-      filtered <- filtered %>% filter(Season == input$season)
+    if (input$sport != "All") {
+      filtered <- filtered %>% filter(Sport == input$sport)
     }
     
-    # Calculate average age and number of participants per game (Year + Season)
-    avg_age_game <- filtered %>%
-      group_by(Year, Season) %>%
+    # Summarize ages (1-year bins)
+    age_summary <- filtered %>%
+      mutate(AgeBin = Age) %>%
+      group_by(AgeBin) %>%
       summarise(
-        AverageAge = mean(Age, na.rm = TRUE),
-        NumParticipants = n(),
+        Participants = n(),
         .groups = "drop"
       )
     
-    # Define bins for histogram
-    bin_width <- 1
-    bins <- seq(floor(min(avg_age_game$AverageAge)), ceiling(max(avg_age_game$AverageAge)), by = bin_width)
-    
-    # Assign each game to a bin
-    avg_age_game <- avg_age_game %>%
-      mutate(bin = cut(AverageAge, breaks = bins, include.lowest = TRUE, right = FALSE))
-    
-    # Summarize per bin
-    bin_summary <- avg_age_game %>%
-      group_by(bin) %>%
-      summarise(
-        Count = n(),  # number of games in bin
-        AvgAgeBin = round(mean(AverageAge), 2),  # average age across games in bin
-        TotalParticipants = sum(NumParticipants),
-        Games = paste(Year, Season, collapse = ", "),
-        .groups = "drop"
-      )
-    
-    # Wrap games for hover
-    wrap_games <- function(games_string, n = 4) {
-      games_vec <- strsplit(games_string, ", ")[[1]]
-      chunks <- split(games_vec, ceiling(seq_along(games_vec)/n))
-      paste(sapply(chunks, paste, collapse = ", "), collapse = "<br>")
-    }
-    bin_summary$Games_br <- sapply(bin_summary$Games, wrap_games)
-    
-    # Plot histogram
+    # Plot
     plot_ly(
-      data = bin_summary,
-      x = ~bin,
-      y = ~Count,
+      data = age_summary,
+      x = ~AgeBin,
+      y = ~Participants,
       type = "bar",
-      text = ~Count,
-      textposition = 'outside',
       hoverinfo = "text",
       hovertext = ~paste(
-        "Age Range:", bin,
-        "<br>Number of Games:", Count,
-        "<br>Avg Age:", AvgAgeBin,
-        "<br>Total Participants:", TotalParticipants,
-        "<br>Games:<br>", Games_br
+        "Age:", AgeBin,
+        "<br>Participants:", Participants
       )
     ) %>%
       layout(
-        title = paste("Distribution of Average Age per Olympic Game -", input$season, "Games"),
-        xaxis = list(title = "Average Age Bin"),
-        yaxis = list(title = "Number of Games"),
-        bargap = 0.1
+        title = paste("Age Distribution of Athletes - Sport:", input$sport),
+        xaxis = list(
+          title = "Age (years)",
+          tickmode = "linear",
+          dtick = 1,
+          rangeslider = list(visible = TRUE),
+          range = c(
+            min(age_summary$AgeBin),
+            min(age_summary$AgeBin) + (max(age_summary$AgeBin) - min(age_summary$AgeBin)) / 3
+          )   # <--- Default zoom: 1/3 of the range
+        ),
+        yaxis = list(title = "Number of Athletes"),
+        bargap = 0.05
       )
-    
   })
 }
 

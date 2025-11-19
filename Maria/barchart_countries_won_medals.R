@@ -63,7 +63,7 @@ server <- function(input, output) {
       mutate(TotalMedals = ifelse(is.na(TotalMedals), 0, TotalMedals)) %>%
       arrange(desc(TotalMedals))
     
-    # ✅ Limit to top N unless "All" is selected
+    # Limit to top N unless "All" is selected
     if (input$topN != "All") {
       all_teams_medals <- all_teams_medals %>%
         slice_head(n = as.numeric(input$topN))
