@@ -18,7 +18,18 @@ ui <- fluidPage(
       
       selectInput("medalType", "Choose Medal:",
                   choices = c("All", "Gold", "Silver", "Bronze"),
-                  selected = "All")
+                  selected = "All"),
+      
+      selectInput("topTeams", "Number of Top Teams to Display:",
+                  choices = c(10, 20, 30, 40, 50),
+                  selected = 10),
+      
+      # Info box about Olympic year structure
+      helpText(HTML(
+        "<b>Olympic Year Info:</b><br/>
+        - 1924–1992: Summer and Winter Olympics occurred in the same year.<br/>
+        - 1994 onwards: Winter Olympics shifted to occur 2 years after Summer Olympics."
+      ))
     ),
     
     mainPanel(
@@ -44,15 +55,15 @@ server <- function(input, output) {
       filtered <- filtered %>% filter(Medal == input$medalType)
     }
     
-    # Determine top 50 teams based on total medals
+    # Determine top N teams based on total medals
     top_teams <- filtered %>%
       group_by(Team) %>%
       summarise(TotalMedals = n(), .groups = "drop") %>%
       arrange(desc(TotalMedals)) %>%
-      slice_head(n = 50) %>%
+      slice_head(n = as.numeric(input$topTeams)) %>%
       pull(Team)
     
-    # Filter to only top 50 teams
+    # Filter to only top N teams
     filtered <- filtered %>% filter(Team %in% top_teams)
     
     # Summarize by Year + Team
@@ -64,9 +75,14 @@ server <- function(input, output) {
         .groups = "drop"
       )
     
-    # Keep only every 4th year
-    olympic_years <- seq(min(country_summary$Year), max(country_summary$Year), by = 4)
-    country_summary <- country_summary %>% filter(Year %in% olympic_years)
+    # Handle Olympic years correctly
+    if (input$season == "All") {
+      # Take all Olympic years from the original dataset (both Summer and Winter)
+      olympic_years <- sort(unique(olympics$Year))
+    } else {
+      # Only years for the selected season
+      olympic_years <- sort(unique(filtered$Year))
+    }
     
     # Fill missing Year x Team combinations with zeros
     country_summary <- country_summary %>%
@@ -81,7 +97,7 @@ server <- function(input, output) {
     desired_max_size <- 60
     sizeref_val <- 2.0 * max_participants / (desired_max_size^2)
     
-    # Generate colors dynamically for top 50 teams
+    # Generate colors dynamically for top N teams
     team_colors <- viridisLite::viridis(n = length(top_teams))
     
     # Create animated bubble chart
@@ -105,8 +121,8 @@ server <- function(input, output) {
       marker = list(sizemode = 'area', sizeref = sizeref_val)
     ) %>%
       layout(
-        title = "Olympic Medals by Team Over Time (Top 50 Teams, Every 4 Years)",
-        xaxis = list(title = "Year", range = c(min(country_summary$Year), max(country_summary$Year))),
+        title = paste("Olympic Medals by Team Over Time (Top", input$topTeams, "Teams)"),
+        xaxis = list(title = "Year", range = c(min(olympic_years), max(olympic_years))),
         yaxis = list(title = "Number of Medals"),
         showlegend = TRUE
       ) %>%
