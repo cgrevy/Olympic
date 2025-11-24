@@ -6,7 +6,7 @@ library(shinyWidgets)
 library(plotly)
 
 
-valid_sports<- dataset_olympics %>%
+valid_sports<- dataset_olympics_male_female %>%
   filter(
     !is.na(Height),
     !is.na(Weight)
@@ -29,10 +29,11 @@ ui <- fluidPage(
   titlePanel("Olympic data"),
   tabsetPanel(
     tabPanel("Height's influence on medals won",
-             selectInput("selected_sport", "Select Sport", choices = sort(unique(dataset_olympics$Sport))),
+             selectInput("selected_gender_height_tab", "Select Sex", choices=unique(dataset_olympics_male_female$Sex)),
+             selectInput("selected_sport", "Select Sport", choices = sort(unique(dataset_olympics_male_female$Sport))),
              plotOutput("height_medal")),
     tabPanel("Height/Weight ratio for athletes",
-             selectInput("selected_gender", "Select Sex", choices=unique(dataset_olympics$Sex)),
+             selectInput("selected_gender", "Select Sex", choices=unique(dataset_olympics_male_female$Sex)),
              checkboxGroupInput("sports_selected", "Select sports", 
                                 choices = valid_sports) %>% 
                tagAppendAttributes(class = "multicol"),
@@ -51,13 +52,13 @@ server <- function(input, output, session) {
     req(input$selected_sport)
     
     # Base: one row per athlete (keep height and sex)
-    athletes_base <- dataset_olympics %>%
-      filter(Sport == input$selected_sport, !is.na(Height)) %>%
+    athletes_base <- dataset_olympics_male_female %>%
+      filter(Sport == input$selected_sport, Sex==input$selected_gender_height_tab, !is.na(Height)) %>%
       group_by(Name, Sex, Height) %>%
       summarise(.groups = "drop")  # distinct athletes with known height
     
     # Medal counts per athlete (within sport), including 0
-    medals_per_athlete <- dataset_olympics %>%
+    medals_per_athlete <- dataset_olympics_male_female %>%
       filter(Sport == input$selected_sport) %>%
       group_by(Name) %>%
       summarise(Medals = sum(!is.na(Medal)), .groups = "drop")
@@ -77,22 +78,20 @@ server <- function(input, output, session) {
     
     ggplot(df, aes(x = Height, y = Medals, color = Sex)) +
       geom_jitter(width = 0, height = 0.1, alpha = 0.6) +
-      geom_smooth(method = "lm", se = FALSE) +
       labs(
         title = paste("Height vs. medals –", input$selected_sport),
         subtitle = subtitle_txt,
         x = "Height (cm)",
         y = "Medal count"
       ) +
-      theme_minimal(base_size = 14) + 
-      facet_wrap(~ Sex, ncol = 1, nrow = 2)
+      theme_minimal(base_size = 14) 
   })
   
   # ---- Height/Weight plot (by selected sex) ----
 output$height_weight <- plotly::renderPlotly({
   req(input$selected_gender, input$sports_selected)
 
-  df_hw <- dataset_olympics %>%
+  df_hw <- dataset_olympics_male_female %>%
     filter(
       Sex == input$selected_gender,
       Sport %in% input$sports_selected,
