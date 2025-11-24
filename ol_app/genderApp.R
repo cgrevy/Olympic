@@ -4,14 +4,14 @@ library(ggplot2)
 library(dplyr)
 library(shinyWidgets)
 
-summer <- dataset_olympics %>% filter(Season=="Summer")
-winter <- dataset_olympics %>% filter(Season=="Winter")
+summer <- dataset_olympics_male_female %>% filter(Season=="Summer")
+winter <- dataset_olympics_male_female %>% filter(Season=="Winter")
 
 valid_years_summer <- sort(unique(summer$Year))
 valid_years_winter <- sort(unique(winter$Year))
 
-min_year <- min(dataset_olympics$Year, na.rm = TRUE)
-max_year <- max(dataset_olympics$Year, na.rm = TRUE)
+min_year <- min(dataset_olympics_male_female$Year, na.rm = TRUE)
+max_year <- max(dataset_olympics_male_female$Year, na.rm = TRUE)
 
 # Define UI
 ui <- fluidPage(
@@ -44,7 +44,7 @@ ui <- fluidPage(
 server <- function(input, output) {
   output$pie_winter <- renderPlot({
     # Data: Count og procent for valgt år
-    gender_year <- dataset_olympics %>%
+    gender_year <- dataset_olympics_male_female %>%
       filter(Year == input$year_winter) %>%
       group_by(Sex) %>%
       summarise(Count = n(), .groups = "drop") %>%
@@ -61,14 +61,14 @@ server <- function(input, output) {
                 position = position_stack(vjust = 0.5), color = "white", size = 5) +
       labs(title = paste("Gender distribution –", input$year_winter), fill = "Gender") +
       theme_void(base_size = 14) +
-      scale_fill_manual(values = c("M" = "#1f77b4", "F" = "#ff7f0e"))
+      scale_fill_manual(values = c("Male" = "#1f77b4", "Female" = "#ff7f0e"))
   })
   
   
   
   output$pie_summer <- renderPlot({
     # Data: Count og procent for valgt år
-    gender_year <- dataset_olympics %>%
+    gender_year <- dataset_olympics_male_female %>%
       filter(Year == input$year_summer) %>%
       group_by(Sex) %>%
       summarise(Count = n(), .groups = "drop") %>%
@@ -85,7 +85,7 @@ server <- function(input, output) {
                 position = position_stack(vjust = 0.5), color = "white", size = 5) +
       labs(title = paste("Gender distribution –", input$year_summer), fill = "Gender") +
       theme_void(base_size = 14) +
-      scale_fill_manual(values = c("M" = "#1f77b4", "F" = "#ff7f0e")) 
+      scale_fill_manual(values = c("Male" = "#1f77b4", "Female" = "#ff7f0e")) 
   })
 }
 

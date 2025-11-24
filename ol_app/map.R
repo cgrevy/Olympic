@@ -8,7 +8,7 @@ ui <- fluidPage(
   tabsetPanel(
     tabPanel("Hosts of Olympic Games",
              plotlyOutput("host_map")),
-    tabPanel("OL tidslinje",
+    tabPanel("Olympic timeline",
              fluidRow(
                column(
                  7,
@@ -19,6 +19,19 @@ ui <- fluidPage(
                  h3("Details"),
                  htmlOutput("timeline_details")
                ))
+             ),
+    tabPanel("Countries represented",
+             fluidRow(
+               plotOutput("NOC_per_game_summer")
+             ),
+             fluidRow(
+               plotOutput("NOC_per_game_winter")
+             )
+             ),
+    tabPanel("Avg age per sport",
+             fluidRow(
+               plotOutput("avg_age_per_sport_plot")
+               )
              )
     )
   )
@@ -109,6 +122,18 @@ server <- function(input, output) {
     
     output$timeline_details <- renderUI({
       tags$p("Click a bubble on the timeline to see details here.")
+    })
+    
+    output$NOC_per_game_summer <- renderPlot({
+      NOC_per_game_summer
+    })
+    
+    output$NOC_per_game_winter <- renderPlot({
+      NOC_per_game_winter
+    })
+    
+    output$avg_age_per_sport_plot <- renderPlot({
+      avg_age_per_sport_plot
     })
 }
   
