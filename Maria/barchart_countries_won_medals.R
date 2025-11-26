@@ -75,11 +75,12 @@ server <- function(input, output) {
       x = ~reorder(Team, TotalMedals),
       y = ~TotalMedals,
       type = "bar",
-      text = ~paste(
+      hovertext = ~paste(
         "Team: ", Team,
         "<br>Total Medals: ", TotalMedals
       ),
-      hoverinfo = "text"
+      hoverinfo = "text",
+      textposition = "none"
     ) %>%
       layout(
         title = paste0(

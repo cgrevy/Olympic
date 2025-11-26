@@ -9,11 +9,10 @@ olympics <- read.csv("/Users/mtue/Desktop/Data visualization/Eksamen project/arc
 
 # ---- UI ----
 ui <- fluidPage(
-  titlePanel("Olympic Participants by Sport Over Time (Bubble Race)"),
+  titlePanel("Olympic Participants by Sport Over Time (Animated Line+Bubble Chart)"),
   
   sidebarLayout(
     sidebarPanel(
-      # Sport pickerInput with 2 random sports selected by default
       pickerInput(
         inputId = "sport",
         label = "Choose Sport(s):",
@@ -21,14 +20,14 @@ ui <- fluidPage(
         selected = sample(unique(olympics$Sport), 2),
         multiple = TRUE,
         options = list(
-          `actions-box` = TRUE,   # Adds select/deselect all buttons
-          `live-search` = TRUE    # Search box for long lists
+          `actions-box` = TRUE,
+          `live-search` = TRUE
         )
       )
     ),
     
     mainPanel(
-      plotlyOutput("bubbleParticipants", height = "700px")
+      plotlyOutput("bubbleRace", height = "700px")
     )
   )
 )
@@ -36,9 +35,8 @@ ui <- fluidPage(
 # ---- SERVER ----
 server <- function(input, output) {
   
-  output$bubbleParticipants <- renderPlotly({
+  output$bubbleRace <- renderPlotly({
     
-    # If no sport is selected, return empty plot
     if (is.null(input$sport) || length(input$sport) == 0) {
       return(plot_ly() %>% layout(title = "No sport selected"))
     }
@@ -46,47 +44,54 @@ server <- function(input, output) {
     filtered <- olympics %>%
       filter(Sport %in% input$sport)
     
-    # Summarize by Year + Sport
+    # Summarize participants per sport per year
     sport_summary <- filtered %>%
       group_by(Year, Sport) %>%
-      summarise(
-        Participants = n_distinct(ID),
-        .groups = "drop"
-      )
+      summarise(Participants = n_distinct(ID), .groups = "drop")
     
-    # Fill missing Year x Sport combinations with zeros
     all_years <- sort(unique(olympics$Year))
+    
+    # Fill missing Year x Sport combinations
     sport_summary <- sport_summary %>%
-      complete(
-        Year = all_years,
-        Sport = input$sport,
-        fill = list(Participants = 0)
-      )
+      complete(Year = all_years, Sport = input$sport, fill = list(Participants = 0)) %>%
+      arrange(Sport, Year)
     
-    # Generate colors dynamically for selected sports
-    sport_colors <- viridisLite::viridis(n = length(input$sport))
+    sport_colors <- viridis(length(input$sport))
+    names(sport_colors) <- input$sport
     
-    # Create animated bubble chart
-    plot_ly(
-      data = sport_summary,
-      x = ~Year,
-      y = ~Participants,
-      color = ~Sport,
-      colors = sport_colors,
-      frame = ~Year,
-      text = ~paste(
-        "Sport:", Sport,
-        "<br>Year:", Year,
-        "<br>Participants:", Participants
-      ),
-      hoverinfo = "text",
-      type = 'scatter',
-      mode = 'markers',
-      marker = list(size = 20)  # fixed bubble size
-    ) %>%
+    # ---- Build animated traces with trailing lines ----
+    p <- plot_ly()
+    
+    for(yr in all_years){
+      for(sp in input$sport){
+        df_line <- sport_summary %>% filter(Sport == sp & Year <= yr)
+        
+        show_leg <- ifelse(yr == min(all_years), TRUE, FALSE)
+        
+        p <- add_trace(
+          p,
+          data = df_line,
+          x = ~Year,
+          y = ~Participants,
+          type = "scatter",
+          mode = "lines+markers",
+          line = list(color = sport_colors[sp], width = 2),
+          marker = list(color = sport_colors[sp], size = 10),
+          name = sp,
+          frame = as.character(yr),
+          hoverinfo = "text",
+          text = ~paste("Sport:", Sport,
+                        "<br>Year:", Year,
+                        "<br>Participants:", Participants),
+          showlegend = show_leg
+        )
+      }
+    }
+    
+    p %>%
       layout(
         title = "Olympic Participants by Sport Over Time",
-        xaxis = list(title = "Year", range = c(min(all_years), max(all_years))),
+        xaxis = list(title = "Year"),
         yaxis = list(title = "Number of Participants"),
         showlegend = TRUE
       ) %>%

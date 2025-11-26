@@ -8,33 +8,13 @@ olympics <- read.csv("/Users/mtue/Desktop/Data visualization/Eksamen project/arc
 
 # ---- UI ----
 ui <- fluidPage(
-  titlePanel("Olympic Medals by Team Over Time (Bubble Race)"),
-  
+  titlePanel("Olympic Medals by Team Over Time (Top 10 Teams with Animation)"),
   sidebarLayout(
     sidebarPanel(
-      selectInput("season", "Choose Games:",
-                  choices = c("All", "Summer", "Winter"),
-                  selected = "All"),
-      
-      selectInput("medalType", "Choose Medal:",
-                  choices = c("All", "Gold", "Silver", "Bronze"),
-                  selected = "All"),
-      
-      selectInput("topTeams", "Number of Top Teams to Display:",
-                  choices = c(10, 20, 30, 40, 50),
-                  selected = 10),
-      
-      # Info box about Olympic year structure
-      helpText(HTML(
-        "<b>Olympic Year Info:</b><br/>
-        - 1924–1992: Summer and Winter Olympics occurred in the same year.<br/>
-        - 1994 onwards: Winter Olympics shifted to occur 2 years after Summer Olympics."
-      ))
+      selectInput("season", "Choose Games:", c("All","Summer","Winter")),
+      selectInput("medalType", "Choose Medal:", c("All","Gold","Silver","Bronze"))
     ),
-    
-    mainPanel(
-      plotlyOutput("bubbleRace", height = "700px")
-    )
+    mainPanel(plotlyOutput("bubbleRace", height="700px"))
   )
 )
 
@@ -44,93 +24,79 @@ server <- function(input, output) {
   output$bubbleRace <- renderPlotly({
     
     filtered <- olympics
+    if(input$season != "All") filtered <- filtered %>% filter(Season == input$season)
+    if(input$medalType != "All") filtered <- filtered %>% filter(Medal == input$medalType)
     
-    # Filter by season if needed
-    if (input$season != "All") {
-      filtered <- filtered %>% filter(Season == input$season)
-    }
-    
-    # Filter by medal type if needed
-    if (input$medalType != "All") {
-      filtered <- filtered %>% filter(Medal == input$medalType)
-    }
-    
-    # Determine top N teams based on total medals
+    # Top 10 teams
     top_teams <- filtered %>%
-      group_by(Team) %>%
-      summarise(TotalMedals = n(), .groups = "drop") %>%
+      count(Team, name="TotalMedals") %>%
       arrange(desc(TotalMedals)) %>%
-      slice_head(n = as.numeric(input$topTeams)) %>%
+      slice_head(n = 5) %>%
       pull(Team)
     
-    # Filter to only top N teams
     filtered <- filtered %>% filter(Team %in% top_teams)
     
-    # Summarize by Year + Team
+    # Summarize medals and participants per team per year
     country_summary <- filtered %>%
       group_by(Year, Team) %>%
-      summarise(
-        Medals = n(),
-        Participants = n_distinct(ID),
-        .groups = "drop"
-      )
+      summarise(Medals = n(),
+                Participants = n_distinct(ID),
+                .groups = "drop")
     
-    # Handle Olympic years correctly
-    if (input$season == "All") {
-      # Take all Olympic years from the original dataset (both Summer and Winter)
-      olympic_years <- sort(unique(olympics$Year))
-    } else {
-      # Only years for the selected season
-      olympic_years <- sort(unique(filtered$Year))
+    olympic_years <- sort(unique(country_summary$Year))
+    
+    # Fill missing year-team combinations
+    country_summary <- country_summary %>%
+      complete(Year = olympic_years, Team = top_teams,
+               fill = list(Medals = 0, Participants = 0)) %>%
+      arrange(Team, Year)
+    
+    colors <- viridis(length(top_teams))
+    names(colors) <- top_teams
+    
+    # ---- Build animated traces with trailing lines ----
+    p <- plot_ly()
+    
+    for(yr in olympic_years){
+      for(team in top_teams){
+        df_line <- country_summary %>% filter(Team == team & Year <= yr)
+        
+        # Only show legend for the first frame
+        show_leg <- ifelse(yr == min(olympic_years), TRUE, FALSE)
+        
+        p <- add_trace(
+          p,
+          data = df_line,
+          x = ~Year,
+          y = ~Medals,
+          type = "scatter",
+          mode = "lines+markers",
+          line = list(color = colors[team], width = 2),
+          marker = list(color = colors[team], size = 10),
+          name = team,
+          frame = as.character(yr),
+          hoverinfo = "text",
+          text = ~paste("Team:", Team,
+                        "<br>Year:", Year,
+                        "<br>Medals:", Medals,
+                        "<br>Participants:", Participants),
+          showlegend = show_leg
+        )
+      }
     }
     
-    # Fill missing Year x Team combinations with zeros
-    country_summary <- country_summary %>%
-      complete(
-        Year = olympic_years,
-        Team = top_teams,
-        fill = list(Medals = 0, Participants = 0)
-      )
-    
-    # Adjust bubble sizes
-    max_participants <- max(country_summary$Participants, na.rm = TRUE)
-    desired_max_size <- 60
-    sizeref_val <- 2.0 * max_participants / (desired_max_size^2)
-    
-    # Generate colors dynamically for top N teams
-    team_colors <- viridisLite::viridis(n = length(top_teams))
-    
-    # Create animated bubble chart
-    plot_ly(
-      data = country_summary,
-      x = ~Year,
-      y = ~Medals,
-      size = ~Participants,
-      color = ~Team,
-      colors = team_colors,
-      frame = ~Year,
-      text = ~paste(
-        "Team:", Team,
-        "<br>Year:", Year,
-        "<br>Medals:", Medals,
-        "<br>Participants:", Participants
-      ),
-      hoverinfo = "text",
-      type = 'scatter',
-      mode = 'markers',
-      marker = list(sizemode = 'area', sizeref = sizeref_val)
-    ) %>%
+    # ---- Layout & Animation ----
+    p %>%
       layout(
-        title = paste("Olympic Medals by Team Over Time (Top", input$topTeams, "Teams)"),
-        xaxis = list(title = "Year", range = c(min(olympic_years), max(olympic_years))),
-        yaxis = list(title = "Number of Medals"),
+        title = "Olympic Medals by Team Over Time (Top 10 Teams)",
+        xaxis = list(title = "Year"),
+        yaxis = list(title = "Medals"),
         showlegend = TRUE
       ) %>%
       animation_opts(frame = 1000, transition = 500, redraw = FALSE) %>%
       animation_slider(currentvalue = list(prefix = "Year: "))
-    
   })
 }
 
 # ---- Run the app ----
-shinyApp(ui = ui, server = server)
+shinyApp(ui, server)
