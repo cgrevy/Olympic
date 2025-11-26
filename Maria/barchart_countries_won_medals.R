@@ -80,7 +80,8 @@ server <- function(input, output) {
         "<br>Total Medals: ", TotalMedals
       ),
       hoverinfo = "text",
-      textposition = "none"
+      textposition = "none",
+      marker = list(color = "#0078D0")
     ) %>%
       layout(
         title = paste0(

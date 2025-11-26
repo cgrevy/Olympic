@@ -57,6 +57,7 @@ server <- function(input, output) {
       x = ~AgeBin,
       y = ~Participants,
       type = "bar",
+      marker = list(color = "#0078D0"),
       hoverinfo = "text",
       hovertext = ~paste(
         "Age:", AgeBin,

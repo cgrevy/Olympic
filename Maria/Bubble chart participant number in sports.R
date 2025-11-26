@@ -56,8 +56,8 @@ server <- function(input, output) {
       complete(Year = all_years, Sport = input$sport, fill = list(Participants = 0)) %>%
       arrange(Sport, Year)
     
-    sport_colors <- viridis(length(input$sport))
-    names(sport_colors) <- input$sport
+    custom_colors <- c("#0078D0", "#FFB114", "#00A651", "#F0282D", "#000000")
+    sport_colors <- setNames(rep(custom_colors, length.out = length(input$sport)), input$sport)
     
     # ---- Build animated traces with trailing lines ----
     p <- plot_ly()

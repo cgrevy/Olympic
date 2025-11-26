@@ -19,8 +19,8 @@ ui <- fluidPage(
         selected = unique(olympics$Sport),
         multiple = TRUE,
         options = list(
-          `actions-box` = TRUE,   # Adds select/deselect all buttons
-          `live-search` = TRUE    # Search box for long lists
+          `actions-box` = TRUE, 
+          `live-search` = TRUE    
         )
       ),
       
@@ -68,15 +68,27 @@ server <- function(input, output) {
       group_by(Year, Sport) %>%
       summarise(AverageAge = mean(Age, na.rm = TRUE), .groups = "drop")
     
-    # ---- Scatter plot with line per sport ----
-    plot_ly(avg_age_year_sport, x = ~Year, y = ~AverageAge, color = ~Sport,
-            type = "scatter", mode = "lines+markers",
-            hoverinfo = "text",
-            hovertext = ~paste(
-              "Year:", Year,
-              "<br>Sport:", Sport,
-              "<br>Average Age:", round(AverageAge, 2)
-            )) %>%
+    # ---- Assign custom colors ----
+    custom_colors <- c("#0078D0", "#FFB114", "#00A651", "#F0282D", "#000000")
+    sport_levels <- unique(avg_age_year_sport$Sport)
+    colors_assigned <- setNames(rep(custom_colors, length.out = length(sport_levels)), sport_levels)
+    
+    # ---- Scatter plot with line per sport using custom colors ----
+    plot_ly(
+      avg_age_year_sport, 
+      x = ~Year, 
+      y = ~AverageAge, 
+      color = ~Sport,
+      colors = colors_assigned,
+      type = "scatter", 
+      mode = "lines+markers",
+      hoverinfo = "text",
+      hovertext = ~paste(
+        "Year:", Year,
+        "<br>Sport:", Sport,
+        "<br>Average Age:", round(AverageAge, 2)
+      )
+    ) %>%
       layout(
         title = "Average Age of Medal Winners Over Time by Sport",
         xaxis = list(title = "Year"),
@@ -89,4 +101,3 @@ server <- function(input, output) {
 
 # ---- Run the app ----
 shinyApp(ui = ui, server = server)
-
