@@ -6,9 +6,14 @@ library(viridisLite)
 
 olympics <- read.csv("/Users/mtue/Desktop/Data visualization/Eksamen project/archive/dataset_olympics.csv")
 
+hex_to_rgba <- function(hex, alpha = 0.35) {
+  rgb <- col2rgb(hex)
+  sprintf("rgba(%d,%d,%d,%.2f)", rgb[1], rgb[2], rgb[3], alpha)
+}
+
 # ---- UI ----
 ui <- fluidPage(
-  titlePanel("Olympic Medals by Team Over Time (Top 10 Teams with Animation)"),
+  titlePanel("Olympic Medals by Team Over Time (Top 5 Teams with Animation)"),
   sidebarLayout(
     sidebarPanel(
       selectInput("season", "Choose Games:", c("All","Summer","Winter")),
@@ -27,7 +32,7 @@ server <- function(input, output) {
     if(input$season != "All") filtered <- filtered %>% filter(Season == input$season)
     if(input$medalType != "All") filtered <- filtered %>% filter(Medal == input$medalType)
     
-    # Top 10 teams
+    # Top 5 teams
     top_teams <- filtered %>%
       count(Team, name="TotalMedals") %>%
       arrange(desc(TotalMedals)) %>%
@@ -36,7 +41,7 @@ server <- function(input, output) {
     
     filtered <- filtered %>% filter(Team %in% top_teams)
     
-    # Summarize medals and participants per team per year
+    # Summaries
     country_summary <- filtered %>%
       group_by(Year, Team) %>%
       summarise(Medals = n(),
@@ -45,34 +50,52 @@ server <- function(input, output) {
     
     olympic_years <- sort(unique(country_summary$Year))
     
-    # Fill missing year-team combinations
+    # Fill missing combinations
     country_summary <- country_summary %>%
       complete(Year = olympic_years, Team = top_teams,
                fill = list(Medals = 0, Participants = 0)) %>%
       arrange(Team, Year)
     
+    # Colors
     custom_colors <- c("#0078D0", "#FFB114", "#00A651", "#F0282D", "#000000")
     colors <- setNames(custom_colors[1:length(top_teams)], top_teams)
+    faded_colors <- sapply(colors, hex_to_rgba)
     
-    # ---- Build animated traces with trailing lines ----
+    # ---- Build animated traces ----
     p <- plot_ly()
     
-    for(yr in olympic_years){
-      for(team in top_teams){
-        df_line <- country_summary %>% filter(Team == team & Year <= yr)
+    for (yr in olympic_years) {
+      for (team in top_teams) {
         
-        # Only show legend for the first frame
-        show_leg <- ifelse(yr == min(olympic_years), TRUE, FALSE)
+        df_line <- country_summary %>% filter(Team == team, Year <= yr)
+        df_point <- df_line %>% filter(Year == yr)
         
+        show_leg <- yr == min(olympic_years)
+        
+        # Faded line
         p <- add_trace(
           p,
           data = df_line,
           x = ~Year,
           y = ~Medals,
           type = "scatter",
-          mode = "lines+markers",
-          line = list(color = colors[team], width = 2),
-          marker = list(color = colors[team], size = 10),
+          mode = "lines",
+          line = list(color = faded_colors[team], width = 3),
+          name = team,
+          frame = as.character(yr),
+          hoverinfo = "none",
+          showlegend = show_leg
+        )
+        
+        # Solid marker
+        p <- add_trace(
+          p,
+          data = df_point,
+          x = ~Year,
+          y = ~Medals,
+          type = "scatter",
+          mode = "markers",
+          marker = list(color = colors[team], size = 12),
           name = team,
           frame = as.character(yr),
           hoverinfo = "text",
@@ -80,7 +103,7 @@ server <- function(input, output) {
                         "<br>Year:", Year,
                         "<br>Medals:", Medals,
                         "<br>Participants:", Participants),
-          showlegend = show_leg
+          showlegend = FALSE
         )
       }
     }
@@ -88,7 +111,7 @@ server <- function(input, output) {
     # ---- Layout & Animation ----
     p %>%
       layout(
-        title = "Olympic Medals by Team Over Time (Top 10 Teams)",
+        title = "Olympic Medals by Team Over Time (Top 5 Teams)",
         xaxis = list(title = "Year"),
         yaxis = list(title = "Medals"),
         showlegend = TRUE

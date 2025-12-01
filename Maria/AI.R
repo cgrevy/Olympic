@@ -10,7 +10,7 @@ olympics <- read.csv("/Users/mtue/Desktop/Data visualization/Eksamen project/arc
 
 # Keep only rows where Medal is not NA
 medalists <- olympics %>%
-  filter(!is.na(Medal))
+  filter(Medal == "Gold" | Medal == "Silver" | Medal == "Bronze" )
 
 # Aggregate medals per athlete
 athlete_medal_counts <- medalists %>%

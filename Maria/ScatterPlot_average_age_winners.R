@@ -6,6 +6,11 @@ library(shinyWidgets)
 
 olympics <- read.csv("/Users/mtue/Desktop/Data visualization/Eksamen project/archive/dataset_olympics.csv")
 
+hex_to_rgba <- function(hex, alpha = 0.4) {
+  rgb <- col2rgb(hex)
+  sprintf("rgba(%d,%d,%d,%.2f)", rgb[1], rgb[2], rgb[3], alpha)
+}
+
 # ---- UI ----
 ui <- fluidPage(
   titlePanel("Average Age of Medal Winners Over Time (1896–2016)"),
@@ -45,7 +50,6 @@ server <- function(input, output) {
   
   output$agePlot <- renderPlotly({
     
-    # If no sport is selected, return empty plot
     if (is.null(input$sport) || length(input$sport) == 0) {
       return(plot_ly() %>% layout(title = "No sport selected"))
     }
@@ -68,33 +72,69 @@ server <- function(input, output) {
       group_by(Year, Sport) %>%
       summarise(AverageAge = mean(Age, na.rm = TRUE), .groups = "drop")
     
-    # ---- Assign custom colors ----
-    custom_colors <- c("#0078D0", "#FFB114", "#00A651", "#F0282D", "#000000")
     sport_levels <- unique(avg_age_year_sport$Sport)
-    colors_assigned <- setNames(rep(custom_colors, length.out = length(sport_levels)), sport_levels)
     
-    # ---- Scatter plot with line per sport using custom colors ----
-    plot_ly(
-      avg_age_year_sport, 
-      x = ~Year, 
-      y = ~AverageAge, 
-      color = ~Sport,
-      colors = colors_assigned,
-      type = "scatter", 
-      mode = "lines+markers",
-      hoverinfo = "text",
-      hovertext = ~paste(
-        "Year:", Year,
-        "<br>Sport:", Sport,
-        "<br>Average Age:", round(AverageAge, 2)
+    # ---- DYNAMIC COLORS ----
+    custom_colors <- c("#0078D0", "#FFB114", "#00A651", "#F0282D", "#000000")
+    
+    if (length(sport_levels) > length(custom_colors)) {
+      extra_needed <- length(sport_levels) - length(custom_colors)
+      set.seed(123)
+      extra_colors <- grDevices::rainbow(extra_needed)
+      colors_assigned <- c(custom_colors, extra_colors)
+    } else {
+      colors_assigned <- custom_colors[1:length(sport_levels)]
+    }
+    
+    colors_assigned <- setNames(colors_assigned, sport_levels)
+    
+    # Create faded line colors (RGBA)
+    line_colors_faded <- sapply(colors_assigned, hex_to_rgba, alpha = 0.35)
+    
+    # ---- BUILD PLOT ----
+    p <- plot_ly()
+    
+    for (sp in sport_levels) {
+      df_sp <- avg_age_year_sport %>% filter(Sport == sp)
+      
+      p <- add_trace(
+        p,
+        data = df_sp,
+        x = ~Year,
+        y = ~AverageAge,
+        type = "scatter",
+        mode = "lines",
+        line = list(color = line_colors_faded[sp], width = 3),
+        name = sp,
+        hoverinfo = "none",
+        showlegend = TRUE
       )
-    ) %>%
-      layout(
-        title = "Average Age of Medal Winners Over Time by Sport",
-        xaxis = list(title = "Year"),
-        yaxis = list(title = "Average Age"),
-        hovermode = "closest"
+      
+      p <- add_trace(
+        p,
+        data = df_sp,
+        x = ~Year,
+        y = ~AverageAge,
+        type = "scatter",
+        mode = "markers",
+        marker = list(color = colors_assigned[sp], size = 7),
+        hoverinfo = "text",
+        hovertext = ~paste(
+          "Year:", df_sp$Year,
+          "<br>Sport:", sp,
+          "<br>Average Age:", round(df_sp$AverageAge, 2)
+        ),
+        name = sp,
+        showlegend = FALSE
       )
+    }
+    
+    p %>% layout(
+      title = "Average Age of Medal Winners Over Time by Sport",
+      xaxis = list(title = "Year"),
+      yaxis = list(title = "Average Age"),
+      hovermode = "closest"
+    )
     
   })
 }
