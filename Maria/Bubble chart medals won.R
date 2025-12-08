@@ -4,7 +4,7 @@ library(dplyr)
 library(tidyr)
 library(viridisLite)
 
-olympics <- read.csv("/Users/mtue/Desktop/Data visualization/Eksamen project/archive/dataset_olympics.csv")
+olympics <- dataset_olympics
 
 hex_to_rgba <- function(hex, alpha = 0.35) {
   rgb <- col2rgb(hex)
@@ -19,14 +19,14 @@ ui <- fluidPage(
       selectInput("season", "Choose Games:", c("All","Summer","Winter")),
       selectInput("medalType", "Choose Medal:", c("All","Gold","Silver","Bronze"))
     ),
-    mainPanel(plotlyOutput("bubbleRace", height="700px"))
+    mainPanel(plotlyOutput("bubble_medals_won", height="700px"))
   )
 )
 
 # ---- SERVER ----
 server <- function(input, output) {
   
-  output$bubbleRace <- renderPlotly({
+  output$bubble_medals_won <- renderPlotly({
     
     filtered <- olympics
     if(input$season != "All") filtered <- filtered %>% filter(Season == input$season)

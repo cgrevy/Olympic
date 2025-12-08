@@ -20,4 +20,6 @@ top_5_overall <- slice_max(medal_count_country, order_by = n, n=5)
 top_5_winter <- slice_max(winter_medals_count, order_by = n, n=5)
 top_5_summer <- slice_max(summer_medals_count, order_by = n, n=5)
 
-ggplot(top_5_overall, aes(NOC, n)) + geom_col()
+overall_top_5_plot <- ggplot(top_5_overall, aes(NOC, n)) + geom_col()
+summer_top_5_plot <- ggplot(top_5_summer, aes(NOC, n)) + geom_col()
+winter_top_5_plot <- ggplot(top_5_winter, aes(NOC, n))+geom_col()

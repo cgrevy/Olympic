@@ -1,10 +1,9 @@
-install.packages(c("shiny", "plotly", "dplyr", "shinyWidgets"))
 library(shiny)
 library(plotly)
 library(dplyr)
 library(shinyWidgets)
 
-olympics <- read.csv("/Users/mtue/Desktop/Data visualization/Eksamen project/archive/dataset_olympics.csv")
+olympics <- dataset_olympics
 
 hex_to_rgba <- function(hex, alpha = 0.4) {
   rgb <- col2rgb(hex)

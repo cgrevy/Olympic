@@ -6,7 +6,7 @@ library(shinyWidgets)
 library(plotly)
 
 
-valid_sports<- dataset_olympics_male_female %>%
+valid_sports_pa<- dataset_olympics_male_female %>%
   filter(
     !is.na(Height),
     !is.na(Weight)
@@ -35,7 +35,7 @@ ui <- fluidPage(
     tabPanel("Height/Weight ratio for athletes",
              selectInput("selected_gender", "Select Sex", choices=unique(dataset_olympics_male_female$Sex)),
              checkboxGroupInput("sports_selected", "Select sports", 
-                                choices = valid_sports) %>% 
+                                choices = valid_sports_pa) %>% 
                tagAppendAttributes(class = "multicol"),
              plotlyOutput("height_weight")
              )

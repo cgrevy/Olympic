@@ -1,34 +1,11 @@
-install.packages(c("shiny", "plotly", "dplyr"))
 library(shiny)
 library(plotly)
 library(dplyr)
 
 olympics <- dataset_olympics
 
-# ---- UI ----
-ui <- fluidPage(
-  titlePanel("Age Distribution of Olympic Athletes by Sport (1896–2016)"),
-  
-  sidebarLayout(
-    sidebarPanel(
-      selectInput("sport", "Choose Sport:",
-                  choices = c("All", sort(unique(olympics$Sport)))),
-      
-      sliderInput("yearRange", "Select Year Range:",
-                  min = 1896, max = 2016,
-                  value = c(1896, 2016),
-                  step = 4, sep = "")
-    ),
-    
-    mainPanel(
-      plotlyOutput("ageHistogram")
-    )
-  )
-)
 
-
-# ---- SERVER ----
-server <- function(input, output) {
+render_hist_age <- function(input, output) {
   
   output$ageHistogram <- renderPlotly({
     
@@ -82,6 +59,3 @@ server <- function(input, output) {
   })
 }
 
-
-# ---- Run the app ----
-shinyApp(ui = ui, server = server)

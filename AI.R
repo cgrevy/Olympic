@@ -25,26 +25,7 @@ athlete_medal_counts <- medalists %>%
   arrange(desc(total_medals))
 
 
-# Define UI
-ui <- fluidPage(
-  titlePanel("Most Winning Olympic Athletes"),
-  sidebarLayout(
-    sidebarPanel(
-      sliderInput("top_n", "Select top N athletes:", 
-                  min = 5, max = 50, value = 10),
-      checkboxGroupInput("medal_type", "Select medal types to display:",
-                         choices = c("Gold", "Silver", "Bronze"),
-                         selected = c("Gold", "Silver", "Bronze"))
-    ),
-    mainPanel(
-      plotlyOutput("medalPlot"),
-      tableOutput("athleteTable")
-    )
-  )
-)
-
-# Define server
-server <- function(input, output, session) {
+render_ai_plot <- function(input, output) {
   
   filtered_data <- reactive({
     athlete_medal_counts %>%
@@ -77,6 +58,3 @@ server <- function(input, output, session) {
     filtered_data()
   })
 }
-
-# Run the app
-shinyApp(ui, server)

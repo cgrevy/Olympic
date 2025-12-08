@@ -1,0 +1,30 @@
+/* Base box styling */
+.timeline-details-box {
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.08);
+  margin-top: 10px;
+}
+
+/* Summer (yellow) */
+.summer-box {
+  border: 2px solid #FFCE19;
+  background-color: #FFF7CC;
+}
+
+/* Winter (blue) */
+.winter-box {
+  border: 2px solid #00B4EB;
+  background-color: #E7F7FF;
+}
+
+.timeline-details-box h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.multicol .shiny-options-group {
+  column-count: 4;
+  column-gap: 200px;
+}
+

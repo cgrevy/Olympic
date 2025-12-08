@@ -1,9 +1,8 @@
-install.packages(c("shiny", "plotly", "dplyr"))
 library(shiny)
 library(plotly)
 library(dplyr)
 
-olympics <- read.csv("/Users/mtue/Desktop/Data visualization/Eksamen project/archive/dataset_olympics.csv")
+olympics <- dataset_olympics
 
 
 # ---- UI ----

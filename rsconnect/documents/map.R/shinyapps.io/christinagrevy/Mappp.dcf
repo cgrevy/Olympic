@@ -1,0 +1,13 @@
+name: Mappp
+title: Mappp
+username: christinagrevy
+account: christinagrevy
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 16203688
+bundleId: 11256100
+url: https://christinagrevy.shinyapps.io/Mappp/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: gender_1.gif|gender_distribution.R|gender_pie.gif|genderApp.R|physicalAttrApp.R|README.MD|renv.lock|top_medalists.R|Maria
