@@ -97,6 +97,14 @@ server <- function(input, output) {
     for (sp in sport_levels) {
       df_sp <- avg_age_year_sport %>% filter(Sport == sp)
       
+      # --- Fixed: hover text generated outside plot_ly formula evaluation ---
+      hover_text <- paste(
+        "Year:", df_sp$Year,
+        "<br>Sport:", df_sp$Sport,
+        "<br>Average Age:", round(df_sp$AverageAge, 2)
+      )
+      
+      # LINE TRACE
       p <- add_trace(
         p,
         data = df_sp,
@@ -104,12 +112,13 @@ server <- function(input, output) {
         y = ~AverageAge,
         type = "scatter",
         mode = "lines",
-        line = list(color = line_colors_faded[sp], width = 3),
+        line = list(color = unname(line_colors_faded[sp]), width = 3),
         name = sp,
         hoverinfo = "none",
         showlegend = TRUE
       )
       
+      # MARKER TRACE
       p <- add_trace(
         p,
         data = df_sp,
@@ -117,13 +126,9 @@ server <- function(input, output) {
         y = ~AverageAge,
         type = "scatter",
         mode = "markers",
-        marker = list(color = colors_assigned[sp], size = 7),
+        marker = list(color = unname(colors_assigned[sp]), size = 7),
         hoverinfo = "text",
-        hovertext = ~paste(
-          "Year:", df_sp$Year,
-          "<br>Sport:", sp,
-          "<br>Average Age:", round(df_sp$AverageAge, 2)
-        ),
+        hovertext = hover_text,
         name = sp,
         showlegend = FALSE
       )
