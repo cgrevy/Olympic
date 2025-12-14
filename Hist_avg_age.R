@@ -15,8 +15,8 @@ render_hist_age <- function(input, output) {
              Year <= input$yearRange[2],
              !is.na(Age))
     
-    if (input$sport != "All") {
-      filtered <- filtered %>% filter(Sport == input$sport)
+    if (input$sportHist != "All") {
+      filtered <- filtered %>% filter(Sport == input$sportHist)
     }
     
     # Summarize ages (1-year bins)
@@ -42,7 +42,7 @@ render_hist_age <- function(input, output) {
       )
     ) %>%
       layout(
-        title = paste("Age Distribution of Athletes - Sport:", input$sport),
+        title = paste("Age Distribution of Athletes - Sport:", input$sportHist),
         xaxis = list(
           title = "Age (years)",
           tickmode = "linear",

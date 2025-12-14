@@ -325,7 +325,7 @@ render_participants_over_time <- function(input, output, olympics, session) {
   observeEvent(input$season, {
     sports_available <- sort(unique(olympics$Sport[olympics$Season == input$season]))
     
-    default_sel <- head(sports_available, min(2, length(sports_available)))
+    default_sel <-c("Equestrianism", "Gymnastics", "Swimming")
     
     updatePickerInput(
       session,
@@ -570,7 +570,7 @@ render_height_weight <- function(input, output){
       )
     )) +
       geom_point(alpha = 0.7, size = 3) +
-      scale_color_manual(values = color_values) +   # <<--- MAGIC 🎨
+      scale_color_manual(values = color_values) +
       labs(
         title = paste("Height vs Weight –", input$selected_gender),
         x = "Height (cm)",
@@ -718,7 +718,7 @@ render_top_countries_bar <- function(input, output) {
       ),
       hoverinfo = "text",
       textposition = "none",
-      marker = list(color = "#0078D0")
+      marker = list(color = "#FFB114")
     ) %>%
       layout(
         title = paste0(
@@ -730,6 +730,105 @@ render_top_countries_bar <- function(input, output) {
       )
   })
 }
+
+render_avg_age_winners <- function(input, output) {
+  
+  output$agePlot <- renderPlotly({
+    
+    if (is.null(input$sportAge) || length(input$sportAge) == 0) {
+      return(plot_ly() %>% layout(title = "No sport selected"))
+    }
+    
+    filtered <- olympics %>%
+      filter(
+        Year >= input$yearRange[1],
+        Year <= input$yearRange[2],
+        !is.na(Age),
+        !is.na(Medal),
+        Sport %in% input$sportAge
+      )
+    
+    if (input$medalType != "All") {
+      filtered <- filtered %>% filter(Medal == input$medalType)
+    }
+    
+    # ---- Compute average age per year per sport ----
+    avg_age_year_sport <- filtered %>%
+      group_by(Year, Sport) %>%
+      summarise(AverageAge = mean(Age, na.rm = TRUE), .groups = "drop")
+    
+    sport_levels <- unique(avg_age_year_sport$Sport)
+    
+    # ---- DYNAMIC COLORS ----
+    custom_colors <- c("#0078D0", "#FFB114", "#00A651", "#F0282D", "#000000")
+    
+    if (length(sport_levels) > length(custom_colors)) {
+      extra_needed <- length(sport_levels) - length(custom_colors)
+      set.seed(123)
+      extra_colors <- grDevices::rainbow(extra_needed)
+      colors_assigned <- c(custom_colors, extra_colors)
+    } else {
+      colors_assigned <- custom_colors[1:length(sport_levels)]
+    }
+    
+    colors_assigned <- setNames(colors_assigned, sport_levels)
+    
+    # Create faded line colors (RGBA)
+    line_colors_faded <- sapply(colors_assigned, hex_to_rgba, alpha = 0.35)
+    
+    # ---- BUILD PLOT ----
+    p <- plot_ly()
+    
+    for (sp in sport_levels) {
+      df_sp <- avg_age_year_sport %>% filter(Sport == sp)
+      
+      # --- Fixed: hover text generated outside plot_ly formula evaluation ---
+      hover_text <- paste(
+        "Year:", df_sp$Year,
+        "<br>Sport:", df_sp$Sport,
+        "<br>Average Age:", round(df_sp$AverageAge, 2)
+      )
+      
+      # LINE TRACE
+      p <- add_trace(
+        p,
+        data = df_sp,
+        x = ~Year,
+        y = ~AverageAge,
+        type = "scatter",
+        mode = "lines",
+        line = list(color = unname(line_colors_faded[sp]), width = 3),
+        name = sp,
+        hoverinfo = "none",
+        showlegend = TRUE
+      )
+      
+      # MARKER TRACE
+      p <- add_trace(
+        p,
+        data = df_sp,
+        x = ~Year,
+        y = ~AverageAge,
+        type = "scatter",
+        mode = "markers",
+        marker = list(color = unname(colors_assigned[sp]), size = 7),
+        hoverinfo = "text",
+        hovertext = hover_text,
+        name = sp,
+        showlegend = FALSE
+      )
+    }
+    
+    p %>% layout(
+      title = "Average Age of Medal Winners Over Time by Sport",
+      xaxis = list(title = "Year"),
+      yaxis = list(title = "Average Age"),
+      hovermode = "closest"
+    )
+    
+  })
+}
+
 
 render_top_countries_bubble <- function(input, output) {
   

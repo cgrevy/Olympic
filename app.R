@@ -24,7 +24,6 @@ valid_sports_pa<- dataset_olympics_male_female %>%
   sort()
 
 
-# Define UI for application that draws a histogram
 ui <- fluidPage(
 
   # For styling:
@@ -41,8 +40,8 @@ ui <- fluidPage(
     tabPanel("Intro", h3("this is an intro to our data")),
     
     tabPanel("Size of the Games",
+             titlePanel("Size of the Games"),
              fluidRow(
-               h3("Size of the Games"),
                column(
                  6,
                  plotlyOutput("ol_timeline", height = "1000px", width="400px")
@@ -70,7 +69,6 @@ ui <- fluidPage(
                      inputId = "sport",
                      label   = "Choose Sport(s):",
                      choices = sort(unique(olympics$Sport[olympics$Season == "Summer"])),
-                     selected = sample(unique(olympics$Sport[olympics$Season == "Summer"]), 2),
                      multiple = TRUE,
                      options = list(
                        `actions-box` = TRUE,
@@ -110,7 +108,7 @@ ui <- fluidPage(
             ),
     
     tabPanel("Top Winning Nations",
-             h2("Top Winning Nations"),
+             titlePanel("Top Winning Nations"),
              sidebarLayout(
                sidebarPanel(
                  selectInput("season", "Choose Games:",
@@ -130,6 +128,7 @@ ui <- fluidPage(
                  plotlyOutput("top_team_bar")
                )
              ),
+             h3("Olympic Medals by Team over Time"),
              sidebarLayout(
                sidebarPanel(
                  selectInput("season", "Choose Games:", c("All","Summer","Winter")),
@@ -140,33 +139,34 @@ ui <- fluidPage(
              ),
     
     tabPanel("The Physics of an Olympian",
-             fluidRow(
-               h3("Height's influence on medals won"),
-               selectInput("selected_gender_height_tab", "Select Sex", choices=unique(dataset_olympics_male_female$Sex)),
-               selectInput("selected_sport", "Select Sport", choices = sort(unique(dataset_olympics_male_female$Sport))),
-               plotOutput("height_medal")
-             ),
-             fluidRow(
+             titlePanel("The Physics of an Olympian"),
+             h3("Height's influence on medals won"),
+             sidebarLayout(
+               sidebarPanel(
+                 selectInput("selected_gender_height_tab", "Select Sex", choices=unique(dataset_olympics_male_female$Sex)),
+                 selectInput("selected_sport", "Select Sport", choices = sort(unique(dataset_olympics_male_female$Sport))),
+               ),
+               mainPanel(plotOutput("height_medal"))),
                h3("Height/Weight ratio for athletes"),
-               selectInput("selected_gender", "Select Sex", choices=unique(dataset_olympics_male_female$Sex)),
+               selectInput("selected_gender", "Select Sex", choices=unique(dataset_olympics_male_female$Sex)), 
                checkboxGroupInput("sports_selected", "Select sports", 
-                                  choices = valid_sports_pa) %>% 
+                                  choices = valid_sports_pa, 
+                                  selected=c("Basketball", "Gymnastics", "Nordic Combined", "Weightlifting")) %>% 
                  tagAppendAttributes(class = "multicol"),
                plotlyOutput("height_weight")
-             )
             ),
     tabPanel("Age in the Olympics",
-             h2("Age in the Olympics"),
-             fluidRow(
+             titlePanel("Age in the Olympics"),
                h3("Participant's Average Age"),
                plotlyOutput("avg_age_per_sport_plot")
-               ),
+               ,
              h3("Distribution of Age per Sport"),
                sidebarLayout(
                  sidebarPanel(
-                   selectInput("sport", "Choose Sport:",
-                               choices = c("All", sort(unique(olympics$Sport)))),
-                   
+                   selectInput("sportHist", "Choose Sport:",
+                               choices = c("All", sort(unique(olympics$Sport)))
+                               ),
+
                    sliderInput("yearRange", "Select Year Range:",
                                min = 1896, max = 2016,
                                value = c(1896, 2016),
@@ -175,7 +175,38 @@ ui <- fluidPage(
                  mainPanel(
                    plotlyOutput("ageHistogram")
                  )
+               ),
+             h3("Medal Winner's Average Age"),
+             fluidRow(
+               sidebarLayout(
+                 sidebarPanel(
+                   pickerInput(
+                     inputId = "sportAge",
+                     label = "Choose Sport(s):",
+                     choices = sort(unique(olympics$Sport)),
+                     selected = c("Gymnastics", "Athletics", "Equestrianism", "Shooting", "Swimming"),
+                     multiple = TRUE,
+                     options = list(
+                       `actions-box` = TRUE, 
+                       `live-search` = TRUE    
+                     )
+                   ),
+                   
+                   selectInput("medalType", "Choose Medal:",
+                               choices = c("All", "Gold", "Silver", "Bronze"),
+                               selected = "All"),
+                   
+                   sliderInput("yearRange", "Select Year Range:",
+                               min = 1896, max = 2016,
+                               value = c(1896, 2016),
+                               step = 4, sep = "")
+                 ),
+                 
+                 mainPanel(
+                   plotlyOutput("agePlot")
+                 )
                )
+             )
              ),
     tabPanel("Most Winning Athletes (AI)",
                titlePanel("Most Winning Olympic Athletes"),
@@ -192,6 +223,8 @@ ui <- fluidPage(
                    tableOutput("athleteTable")
                  )
                )
+             ),
+    tabPanel("Report",
              )
   )
 )
@@ -233,6 +266,7 @@ server <- function(input, output, session) {
     avg_age_per_sport_plotly
   })
   render_hist_age(input, output)
+  render_avg_age_winners(input, output)
   
   # AI Tab
   render_ai_plot(input, output)

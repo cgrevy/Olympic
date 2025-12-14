@@ -49,7 +49,7 @@ server <- function(input, output) {
   
   output$agePlot <- renderPlotly({
     
-    if (is.null(input$sport) || length(input$sport) == 0) {
+    if (is.null(input$sportAge) || length(input$sportAge) == 0) {
       return(plot_ly() %>% layout(title = "No sport selected"))
     }
     
@@ -59,7 +59,7 @@ server <- function(input, output) {
         Year <= input$yearRange[2],
         !is.na(Age),
         !is.na(Medal),
-        Sport %in% input$sport
+        Sport %in% input$sportAge
       )
     
     if (input$medalType != "All") {

@@ -51,7 +51,7 @@ server <- function(input, output, session) {
   observeEvent(input$season, {
     sports_available <- sort(unique(olympics$Sport[olympics$Season == input$season]))
     
-    default_sel <- head(sports_available, min(2, length(sports_available)))
+    default_sel <-c("Gymnastics", "Swimming")
     
     updatePickerInput(
       session,
