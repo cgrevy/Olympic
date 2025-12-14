@@ -6,6 +6,25 @@ dataset_olympics_male_female$Sex <- ifelse(dataset_olympics$Sex == "M", "Male", 
 
 dataset_olympics_male_female
 
+
+introduction_text <- HTML("The Olympic Games creates a worldwide gathering point for the entire population. <br><br>
+It is an event where people can lay their differences aside and come together in celebrating sports and achievements. But how have the Olympics evolved over time? 
+And what can we learn from the data of its participants? <br><br>
+
+Coming from sports backgrounds we have a personal interest in human performance and competition. It is interesting to see which metrics play a role in winning medals and producing top athletes, 
+and how these differ between sports. <br><br>
+Is an athlete just an athlete? Different sports favor different attributes, and how does this look? <br><br>
+
+<b> The data </b> <br>
+The data visualized in this project has been obtained from the website Kaggle. <br><br>
+
+The dataset covers the name, gender, height, weight and age of the athlete, 
+the year and sport they participated in, the team they represented, what committee they represented, 
+whether they participated in summer or winter olympics and what medal they won, if any. 
+It also contains the season, the city and the event. <br><br>
+
+Explore the data by switching between the tabs on the left!")
+
 hosts <- dataset_olympics %>%
   distinct(City) %>%
   arrange(City)

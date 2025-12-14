@@ -30,14 +30,21 @@ ui <- fluidPage(
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")
   ), 
-  
-  titlePanel("Olympic Data Visualization"),
+  titlePanel(
+    div(
+      style = "text-align: center;",
+      img(src = "rings.svg", height = "40px", style = "vertical-align: middle; margin-right: 10px;"),
+      span("Olympic Data Visualization", style = "font-size: 32px; font-weight: bold;")
+    )
+  ),
   
   navlistPanel(
     widths = c(2, 10),
     "Menu",
     
-    tabPanel("Intro", h3("this is an intro to our data")),
+    tabPanel("Introduction ", h3("Introduction"),
+             img(src="cover.jpg", height="300px", align="center"),
+             p(introduction_text)),
     
     tabPanel("Size of the Games",
              titlePanel("Size of the Games"),
