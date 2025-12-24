@@ -20,7 +20,7 @@ The data visualized in this project has been obtained from the website Kaggle. <
 
 The dataset covers the name, gender, height, weight and age of the athlete, 
 the year and sport they participated in, the team they represented, what committee they represented, 
-whether they participated in summer or winter olympics and what medal they won, if any. 
+whether they participated in Summer or Winter Olympics and what medal they won, if any. 
 It also contains the season, the city and the event. <br><br>
 
 Explore the data by switching between the tabs on the left!")
@@ -316,6 +316,15 @@ render_ol_timeline <- function(output, games_timeline) {
         ),
         annotations = list(
           list(
+            x=0,
+            y=0,
+            xref = "x",
+            yref = "paper",
+            text = "Click bubble to see details",
+            showarrow = FALSE,
+            font = list(size = 14)
+          ),
+          list(
             x = -1,
             y = 1.0,
             xref = "x",
@@ -509,6 +518,7 @@ render_height_medal <- function(input, output){
       group_by(Name, Sex, Height) %>%
       summarise(.groups = "drop")  # distinct athletes with known height
     
+    
     # Medal counts per athlete (within sport), including 0
     medals_per_athlete <- dataset_olympics_male_female %>%
       filter(Sport == input$selected_sport) %>%
@@ -523,14 +533,20 @@ render_height_medal <- function(input, output){
       need(nrow(df) > 0, paste0("No data for sport: ", input$selected_sport))
     )
     
-    ggplot(df, aes(x = Height, y = Medals, color = Sex)) +
-      geom_jitter(width = 0, height = 0.1, alpha = 0.6) +
+    
+    dot_color <- ifelse(input$selected_gender_height_tab == "Male", "#0078D0", "#F0282D")
+    
+    ggplot(df, aes(x = Height, y = Medals)) +
+      geom_jitter(width = 0, height = 0.1, alpha = 0.6, color = dot_color) +
       labs(
         title = paste("Height vs. medals –", input$selected_sport),
         x = "Height (cm)",
         y = "Medal count"
-      ) +
-      theme_minimal(base_size = 14) 
+      )+ theme_minimal(14) +
+      theme(
+        axis.line = element_line(color = "black")
+      )
+    
   })
 }
 
@@ -595,7 +611,9 @@ render_height_weight <- function(input, output){
         x = "Height (cm)",
         y = "Weight (kg)"
       ) +
-      theme_minimal()
+      theme_minimal(14) +
+      theme(
+        axis.line = element_line(color = "black"))
     
     plotly::ggplotly(gg, tooltip = "text")
   })
@@ -621,7 +639,7 @@ avg_age_per_sport_plot <- avg_age_per_sport %>%
   geom_col() +
   geom_hline(yintercept = gen_avg_age, linetype=3) +
   annotate(
-    "text", label = "Avg age across sports",
+    "text", label = "",
     x = gen_avg_age, y = 30, size = 3, colour = "black"
   ) +
   scale_fill_gradient(
@@ -677,11 +695,11 @@ avg_age_per_sport_plotly <- plot_ly(
     yaxis = list(title = "Average age"),
     annotations = list(
       list(
-        x = 0.5,
+        x = 0.2,
         y = gen_avg_age,
         xref = "paper",
         yref = "y",
-        text = "Avg age across sports",
+        text = paste0("<b>Avg age across sports: ", round(gen_avg_age, 1), "years</b>"),
         showarrow = FALSE,
         ax = 0,
         ay = -40
@@ -732,7 +750,7 @@ render_top_countries_bar <- function(input, output) {
       y = ~TotalMedals,
       type = "bar",
       hovertext = ~paste(
-        "Team: ", Team,
+        "Country: ", Team,
         "<br>Total Medals: ", TotalMedals
       ),
       hoverinfo = "text",
@@ -741,10 +759,10 @@ render_top_countries_bar <- function(input, output) {
     ) %>%
       layout(
         title = paste0(
-          if (input$topN == "All") "All Teams" else paste("Top", input$topN, "Teams"),
+          if (input$topN == "All") "All Countries" else paste("Top", input$topN, "Teams"),
           " - ", input$season, " Olympic Games"
         ),
-        xaxis = list(title = "Team", categoryorder = "total descending"),
+        xaxis = list(title = "Country", categoryorder = "total descending"),
         yaxis = list(title = "Total Medals")
       )
   })
@@ -760,8 +778,8 @@ render_avg_age_winners <- function(input, output) {
     
     filtered <- olympics %>%
       filter(
-        Year >= input$yearRange[1],
-        Year <= input$yearRange[2],
+        Year >= input$yearRangeMedal[1],
+        Year <= input$yearRangeMedal[2],
         !is.na(Age),
         !is.na(Medal),
         Sport %in% input$sportAge
@@ -924,7 +942,7 @@ render_top_countries_bubble <- function(input, output) {
           name = team,
           frame = as.character(yr),
           hoverinfo = "text",
-          text = ~paste("Team:", Team,
+          text = ~paste("Country:", Team,
                         "<br>Year:", Year,
                         "<br>Medals:", Medals,
                         "<br>Participants:", Participants),
@@ -936,7 +954,7 @@ render_top_countries_bubble <- function(input, output) {
     # ---- Layout & Animation ----
     p %>%
       layout(
-        title = "Olympic Medals by Team Over Time (Top 5 Teams)",
+        title = "Top 5 Countries of all Time (Medals Won)",
         xaxis = list(title = "Year"),
         yaxis = list(title = "Medals"),
         showlegend = TRUE

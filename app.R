@@ -30,20 +30,24 @@ ui <- fluidPage(
   tags$head(
     tags$link(rel = "stylesheet", type = "text/css", href = "styles.css")
   ), 
-  titlePanel(
+  titlePanel(title =
     div(
       style = "text-align: center;",
       img(src = "rings.svg", height = "40px", style = "vertical-align: middle; margin-right: 10px;"),
       span("Olympic Data Visualization", style = "font-size: 32px; font-weight: bold;")
-    )
+    ),
+    windowTitle ="Olympic Data"
   ),
   
   navlistPanel(
     widths = c(2, 10),
     "Menu",
     
-    tabPanel("Introduction ", h3("Introduction"),
-             img(src="cover.jpg", height="300px", align="center"),
+    tabPanel("Introduction ", 
+             div(style= "align: center;",
+                 img(src="cover.jpg", height="300px")
+                 ), 
+             h3("Introduction"),
              p(introduction_text)),
     
     tabPanel("Size of the Games",
@@ -81,7 +85,8 @@ ui <- fluidPage(
                        `actions-box` = TRUE,
                        `live-search` = TRUE
                      )
-                   )
+                   ),
+                   p("Press the play button under the graph to start the animation")
                    ),
                    mainPanel(
                      plotlyOutput("bubbleRace", height = "700px")
@@ -98,6 +103,7 @@ ui <- fluidPage(
                 grid = TRUE,
                 animate = TRUE
               ),
+              p("Press the play button to start the animation"),
               plotlyOutput("area_summer")
               ),
             fluidRow(
@@ -110,12 +116,13 @@ ui <- fluidPage(
                 grid = TRUE,
                 animate = TRUE
               ),
+              p("Press the play button to start the animation"),
               plotlyOutput("area_winter")
             )
             ),
     
-    tabPanel("Top Winning Nations",
-             titlePanel("Top Winning Nations"),
+    tabPanel("Top Winning Countries",
+             titlePanel("Top Winning Countries"),
              sidebarLayout(
                sidebarPanel(
                  selectInput("season", "Choose Games:",
@@ -127,19 +134,20 @@ ui <- fluidPage(
                              value = c(1896, 2016),
                              step = 4, sep = ""),
                  
-                 selectInput("topN", "Number of Teams to Display:",
-                             choices = c(10, 15, 25, 50, 100, "All"),
+                 selectInput("topN", "Number of Countries to Display:",
+                             choices = c(10, 15, 25, "All"),
                              selected = 15)
                ),
                mainPanel(
                  plotlyOutput("top_team_bar")
                )
              ),
-             h3("Olympic Medals by Team over Time"),
+             h3("Olympic Medals by Country over Time"),
              sidebarLayout(
                sidebarPanel(
                  selectInput("season", "Choose Games:", c("All","Summer","Winter")),
-                 selectInput("medalType", "Choose Medal:", c("All","Gold","Silver","Bronze"))
+                 selectInput("medalType", "Choose Medal:", c("All","Gold","Silver","Bronze")),
+                 p("Press the play button under the graph to start the animation")
                ),
                mainPanel(plotlyOutput("bubble_medals_won", height="700px"))
              )
@@ -147,15 +155,18 @@ ui <- fluidPage(
     
     tabPanel("The Physics of an Olympian",
              titlePanel("The Physics of an Olympian"),
-             h3("Height's influence on medals won"),
+             h3("Height of Athletes Correlation with Medals Won"),
              sidebarLayout(
                sidebarPanel(
                  selectInput("selected_gender_height_tab", "Select Sex", choices=unique(dataset_olympics_male_female$Sex)),
                  selectInput("selected_sport", "Select Sport", choices = sort(unique(dataset_olympics_male_female$Sport))),
                ),
                mainPanel(plotOutput("height_medal"))),
+             
                h3("Height/Weight ratio for athletes"),
                selectInput("selected_gender", "Select Sex", choices=unique(dataset_olympics_male_female$Sex)), 
+                p("We have selected four sports, that differ in their athlethes' physical attributes. Feel free to explore 
+                  others."),
                checkboxGroupInput("sports_selected", "Select sports", 
                                   choices = valid_sports_pa, 
                                   selected=c("Basketball", "Gymnastics", "Nordic Combined", "Weightlifting")) %>% 
@@ -183,7 +194,7 @@ ui <- fluidPage(
                    plotlyOutput("ageHistogram")
                  )
                ),
-             h3("Medal Winner's Average Age"),
+             h3("Medal Winners' Average Age"),
              fluidRow(
                sidebarLayout(
                  sidebarPanel(
@@ -203,7 +214,7 @@ ui <- fluidPage(
                                choices = c("All", "Gold", "Silver", "Bronze"),
                                selected = "All"),
                    
-                   sliderInput("yearRange", "Select Year Range:",
+                   sliderInput("yearRangeMedal", "Select Year Range:",
                                min = 1896, max = 2016,
                                value = c(1896, 2016),
                                step = 4, sep = "")
@@ -232,6 +243,9 @@ ui <- fluidPage(
                )
              ),
     tabPanel("Report",
+             h3("Download Report"),
+             p("Download our report regarding the project here:"),
+             downloadButton("download_pdf", "Download PDF"),
              )
   )
 )
@@ -277,6 +291,17 @@ server <- function(input, output, session) {
   
   # AI Tab
   render_ai_plot(input, output)
+  
+  # Download tab
+  output$download_pdf <- downloadHandler(
+    filename = function() {
+      "DV-Report.pdf"
+    },
+    content = function(file) {
+      file.copy("www/DV-Report.pdf", file)
+    },
+    contentType = "application/pdf"
+  )
   
   
 }
